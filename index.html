@@ -5,29 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    input, button { padding: 10px; margin: 5px 0; width: 100%; }
+    input, button, select { padding: 10px; margin: 5px 0; width: 100%; }
     .result { margin-top: 20px; font-weight: bold; }
   </style>
 </head>
 <body>
   <h2>Mantle TX Checker</h2>
-  <p>Enter a wallet address to check how many outgoing transactions it made to the game contract between Mar 24 - Mar 31 (UTC).</p>
+  <p>Enter a wallet address and select a date/time range to check outgoing transactions to the game contract.</p>
+
   <input id="wallet" type="text" placeholder="Enter wallet address">
+  <label for="start">Start Date & Time (UTC):</label>
+  <input type="datetime-local" id="start" value="2025-03-24T00:58">
+
+  <label for="end">End Date & Time (UTC):</label>
+  <input type="datetime-local" id="end" value="2025-03-31T01:00">
+
   <button onclick="checkTxs()">Check Transactions</button>
   <div class="result" id="result"></div>
 
   <script>
     const CONTRACT = '0x548D252638c2281D8839a0635f714452e1F31243'.toLowerCase();
-    const START_TIME = new Date('2025-03-24T00:58:00Z').getTime() / 1000;
-    const END_TIME = new Date('2025-03-31T01:00:00Z').getTime() / 1000;
 
     async function checkTxs() {
       const wallet = document.getElementById('wallet').value.trim().toLowerCase();
       const resultEl = document.getElementById('result');
+      const startInput = document.getElementById('start').value;
+      const endInput = document.getElementById('end').value;
+
       if (!wallet || !wallet.startsWith('0x') || wallet.length !== 42) {
         resultEl.innerText = 'Please enter a valid wallet address.';
         return;
       }
+
+      if (!startInput || !endInput) {
+        resultEl.innerText = 'Please select both start and end dates.';
+        return;
+      }
+
+      const START_TIME = new Date(startInput).getTime() / 1000;
+      const END_TIME = new Date(endInput).getTime() / 1000;
 
       resultEl.innerText = 'Checking...';
 
@@ -48,7 +64,7 @@
           tx.from.toLowerCase() === wallet
         );
 
-        resultEl.innerText = `Total outgoing transactions to contract during competition: ${filtered.length}`;
+        resultEl.innerText = `Total outgoing transactions to contract during selected range: ${filtered.length}`;
       } catch (e) {
         resultEl.innerText = 'Error fetching data.';
         console.error(e);
