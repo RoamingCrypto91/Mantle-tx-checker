@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mantle TX Checker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; }
+    .result { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>Mantle TX Checker</h2>
+  <p>Enter a wallet address to check how many outgoing transactions it made to the game contract between Mar 24 - Mar 31 (UTC).</p>
+  <input id="wallet" type="text" placeholder="Enter wallet address">
+  <button onclick="checkTxs()">Check Transactions</button>
+  <div class="result" id="result"></div>
+
+  <script>
+    const CONTRACT = '0x548D252638c2281D8839a0635f714452e1F31243'.toLowerCase();
+    const START_TIME = new Date('2024-03-24T00:58:00Z').getTime() / 1000;
+    const END_TIME = new Date('2025-03-31T01:00:00Z').getTime() / 1000;
+
+    async function checkTxs() {
+      const wallet = document.getElementById('wallet').value.trim().toLowerCase();
+      const resultEl = document.getElementById('result');
+      if (!wallet || !wallet.startsWith('0x') || wallet.length !== 42) {
+        resultEl.innerText = 'Please enter a valid wallet address.';
+        return;
+      }
+
+      resultEl.innerText = 'Checking...';
+
+      try {
+        const res = await fetch(`https://explorer.mantle.xyz/api?module=account&action=txlist&address=${wallet}&startblock=0&endblock=99999999&sort=asc`);
+        const data = await res.json();
+
+        if (data.status !== '1') {
+          resultEl.innerText = 'No transactions found or error from API.';
+          return;
+        }
+
+        const txs = data.result;
+        const filtered = txs.filter(tx =>
+          tx.to && tx.to.toLowerCase() === CONTRACT &&
+          parseInt(tx.timeStamp) >= START_TIME &&
+          parseInt(tx.timeStamp) <= END_TIME &&
+          tx.from.toLowerCase() === wallet
+        );
+
+        resultEl.innerText = `Total outgoing transactions to contract during competition: ${filtered.length}`;
+      } catch (e) {
+        resultEl.innerText = 'Error fetching data.';
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>
