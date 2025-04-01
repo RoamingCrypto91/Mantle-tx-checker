@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Mantle TX Checker</title>
+  <title>Mantle TX Checker (FIDE AI)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
@@ -10,8 +10,8 @@
   </style>
 </head>
 <body>
-  <h2>Mantle TX Checker</h2>
-  <p>Enter a wallet address and select a date/time range to check outgoing transactions to the game contract.</p>
+  <h2>Mantle FIDE AI TX Checker</h2>
+  <p>Enter a wallet address and select a date/time range to check how many FIDE AI token transfers were made to the game contract.</p>
 
   <input id="wallet" type="text" placeholder="Enter wallet address">
   <label for="start">Start Date & Time (UTC):</label>
@@ -20,11 +20,12 @@
   <label for="end">End Date & Time (UTC):</label>
   <input type="datetime-local" id="end" value="2025-03-31T01:00">
 
-  <button onclick="checkTxs()">Check Transactions</button>
+  <button onclick="checkTxs()">Check FIDE AI Transfers</button>
   <div class="result" id="result"></div>
 
   <script>
-    const CONTRACT = '0x548D252638c2281D8839a0635f714452e1F31243'.toLowerCase();
+    const COMPETITION_CONTRACT = '0x548D252638c2281D8839a0635f714452e1F31243'.toLowerCase();
+    const FIDE_TOKEN = '0x6c5fA4266e51FA2D7E11523CAAA83cF8B8CEa9Fd'.toLowerCase();
 
     async function checkTxs() {
       const wallet = document.getElementById('wallet').value.trim().toLowerCase();
@@ -45,28 +46,28 @@
       const START_TIME = new Date(startInput).getTime() / 1000;
       const END_TIME = new Date(endInput).getTime() / 1000;
 
-      resultEl.innerText = 'Checking...';
+      resultEl.innerText = 'Checking FIDE AI token transfers...';
 
       try {
-        const res = await fetch(`https://explorer.mantle.xyz/api?module=account&action=txlist&address=${wallet}&startblock=0&endblock=99999999&sort=asc`);
+        const res = await fetch(`https://explorer.mantle.xyz/api?module=account&action=tokentx&contractaddress=${FIDE_TOKEN}&address=${wallet}&startblock=0&endblock=99999999&sort=asc`);
         const data = await res.json();
 
         if (data.status !== '1') {
-          resultEl.innerText = 'No transactions found or error from API.';
+          resultEl.innerText = 'No token transfers found or API error.';
           return;
         }
 
         const txs = data.result;
         const filtered = txs.filter(tx =>
-          tx.to && tx.to.toLowerCase() === CONTRACT &&
+          tx.to && tx.to.toLowerCase() === COMPETITION_CONTRACT &&
+          tx.from.toLowerCase() === wallet &&
           parseInt(tx.timeStamp) >= START_TIME &&
-          parseInt(tx.timeStamp) <= END_TIME &&
-          tx.from.toLowerCase() === wallet
+          parseInt(tx.timeStamp) <= END_TIME
         );
 
-        resultEl.innerText = `Total outgoing transactions to contract during selected range: ${filtered.length}`;
+        resultEl.innerText = `FIDE AI tokens sent to competition contract during selected range: ${filtered.length}`;
       } catch (e) {
-        resultEl.innerText = 'Error fetching data.';
+        resultEl.innerText = 'Error fetching token data.';
         console.error(e);
       }
     }
